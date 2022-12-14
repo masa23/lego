@@ -41,7 +41,7 @@ type DNSProvider struct {
 }
 
 // NewDNSProvider returns a DNSProvider instance configured for self hosted DNS.
-// Credentials must be passed in the environment variables:
+// The DNS server hostname and the Listen IP address are specified in the environment variables:
 // SELFDNS_LISTEN_ADDRESS & SELFDNS_SERVER_HOSTNAME.
 func NewDNSProvider() (*DNSProvider, error) {
 	values, err := env.Get(EnvListenAddress, EnvServerHostname)
