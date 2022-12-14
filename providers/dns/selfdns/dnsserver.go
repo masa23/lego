@@ -65,7 +65,7 @@ func (d *DNSProvider) Run() error {
 
 	dns.HandleFunc(".", request)
 	go func() {
-		d.config.serverUDP.ListenAndServe()
+		err := d.config.serverUDP.ListenAndServe()
 	}()
 
 	go func() {

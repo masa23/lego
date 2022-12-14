@@ -1,3 +1,28 @@
+# lego(add selfdns)
+
+legoにselfdnsというDNS Providerを追加したForkです。  
+
+legoコマンド自体がDNSサーバとして動作し `_acme-challenge` の応答をします。
+
+## 使い方
+
+* あらかじめ発行する対象のドメインの_acme-challengeをNSレコードで実行するサーバに向けるようにしておきます
+
+```
+_acme-challenge IN NS <実行するサーバのグローバルIP>
+```
+
+* legoコマンドを実行します
+
+```
+# SELFDNS_LISTEN_ADDRESS=<実行するサーバのグローバルIP> SELFDNS_SERVER_HOSTNAME=<実行するサーバのホスト名> ./lego --email <メールアドレス> --domains="*.example.jp" --accept-tos --dns=selfdns run
+```
+
+* 実行するサーバの53番PortでDNSサーバとして動作するのであらかじめファイアウォールを開けておく必要があります。
+* SELFDNS_SERVER_HOSTNAME は応答のSOAレコードに使用しています。
+
+---
+
 <div align="center">
   <img alt="lego logo" src="./docs/static/images/lego-logo.min.svg">
   <p>Automatic Certificates and HTTPS for everyone.</p>
