@@ -5,7 +5,7 @@ package cmd
 
 import (
 	"fmt"
-	"os"
+	"io"
 	"sort"
 	"strings"
 	"text/tabwriter"
@@ -34,6 +34,7 @@ func allDNSCodes() string {
 		"desec",
 		"designate",
 		"digitalocean",
+		"dnshomede",
 		"dnsimple",
 		"dnsmadeeasy",
 		"dnspod",
@@ -109,6 +110,7 @@ func allDNSCodes() string {
 		"stackpath",
 		"tencentcloud",
 		"transip",
+		"ultradns",
 		"variomedia",
 		"vegadns",
 		"vercel",
@@ -117,6 +119,7 @@ func allDNSCodes() string {
 		"vkcloud",
 		"vscale",
 		"vultr",
+		"websupport",
 		"wedos",
 		"yandex",
 		"yandexcloud",
@@ -127,8 +130,8 @@ func allDNSCodes() string {
 	return strings.Join(providers, ", ")
 }
 
-func displayDNSHelp(name string) error {
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+func displayDNSHelp(w io.Writer, name string) error {
+	w = tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	ew := &errWriter{w: w}
 
 	switch name {
@@ -570,6 +573,20 @@ func displayDNSHelp(name string) error {
 
 		ew.writeln()
 		ew.writeln(`More information: https://go-acme.github.io/lego/dns/digitalocean`)
+
+	case "dnshomede":
+		// generated from: providers/dns/dnshomede/dnshomede.toml
+		ew.writeln(`Configuration for dnsHome.de.`)
+		ew.writeln(`Code:	'dnshomede'`)
+		ew.writeln(`Since:	'v4.10.0'`)
+		ew.writeln()
+
+		ew.writeln(`Credentials:`)
+		ew.writeln(`	- "DNSHOMEDE_CREDENTIALS":	Comma-separated list of domain:password credential pairs`)
+		ew.writeln()
+
+		ew.writeln()
+		ew.writeln(`More information: https://go-acme.github.io/lego/dns/dnshomede`)
 
 	case "dnsimple":
 		// generated from: providers/dns/dnsimple/dnsimple.toml
@@ -2158,6 +2175,27 @@ func displayDNSHelp(name string) error {
 		ew.writeln()
 		ew.writeln(`More information: https://go-acme.github.io/lego/dns/transip`)
 
+	case "ultradns":
+		// generated from: providers/dns/ultradns/ultradns.toml
+		ew.writeln(`Configuration for Ultradns.`)
+		ew.writeln(`Code:	'ultradns'`)
+		ew.writeln(`Since:	'v4.10.0'`)
+		ew.writeln()
+
+		ew.writeln(`Credentials:`)
+		ew.writeln(`	- "ULTRADNS_PASSWORD":	API Password`)
+		ew.writeln(`	- "ULTRADNS_USERNAME":	API Username`)
+		ew.writeln()
+
+		ew.writeln(`Additional Configuration:`)
+		ew.writeln(`	- "ULTRADNS_ENDPOINT":	API endpoint URL, defaults to https://api.ultradns.com/`)
+		ew.writeln(`	- "ULTRADNS_POLLING_INTERVAL":	Time between DNS propagation check`)
+		ew.writeln(`	- "ULTRADNS_PROPAGATION_TIMEOUT":	Maximum waiting time for DNS propagation`)
+		ew.writeln(`	- "ULTRADNS_TTL":	The TTL of the TXT record used for the DNS challenge`)
+
+		ew.writeln()
+		ew.writeln(`More information: https://go-acme.github.io/lego/dns/ultradns`)
+
 	case "variomedia":
 		// generated from: providers/dns/variomedia/variomedia.toml
 		ew.writeln(`Configuration for Variomedia.`)
@@ -2330,6 +2368,28 @@ func displayDNSHelp(name string) error {
 		ew.writeln()
 		ew.writeln(`More information: https://go-acme.github.io/lego/dns/vultr`)
 
+	case "websupport":
+		// generated from: providers/dns/websupport/websupport.toml
+		ew.writeln(`Configuration for Websupport.`)
+		ew.writeln(`Code:	'websupport'`)
+		ew.writeln(`Since:	'v4.10.0'`)
+		ew.writeln()
+
+		ew.writeln(`Credentials:`)
+		ew.writeln(`	- "WEBSUPPORT_API_KEY":	API key`)
+		ew.writeln(`	- "WEBSUPPORT_SECRET":	API secret`)
+		ew.writeln()
+
+		ew.writeln(`Additional Configuration:`)
+		ew.writeln(`	- "WEBSUPPORT_HTTP_TIMEOUT":	API request timeout`)
+		ew.writeln(`	- "WEBSUPPORT_POLLING_INTERVAL":	Time between DNS propagation check`)
+		ew.writeln(`	- "WEBSUPPORT_PROPAGATION_TIMEOUT":	Maximum waiting time for DNS propagation`)
+		ew.writeln(`	- "WEBSUPPORT_SEQUENCE_INTERVAL":	Time between sequential requests`)
+		ew.writeln(`	- "WEBSUPPORT_TTL":	The TTL of the TXT record used for the DNS challenge`)
+
+		ew.writeln()
+		ew.writeln(`More information: https://go-acme.github.io/lego/dns/websupport`)
+
 	case "wedos":
 		// generated from: providers/dns/wedos/wedos.toml
 		ew.writeln(`Configuration for WEDOS.`)
@@ -2439,9 +2499,8 @@ func displayDNSHelp(name string) error {
 		return fmt.Errorf("%q is not yet supported", name)
 	}
 
-	if ew.err != nil {
-		return fmt.Errorf("error: %w", ew.err)
+	if flusher, ok := w.(interface{ Flush() error }); ok {
+		return flusher.Flush()
 	}
-
-	return w.Flush()
+	return nil
 }
