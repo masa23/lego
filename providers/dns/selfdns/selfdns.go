@@ -4,6 +4,8 @@ package selfdns
 import (
 	"errors"
 	"fmt"
+	"net"
+	"os"
 
 	"github.com/go-acme/lego/v4/challenge/dns01"
 	"github.com/go-acme/lego/v4/platform/config/env"
@@ -44,6 +46,7 @@ type DNSProvider struct {
 // The DNS server hostname and the Listen IP address are specified in the environment variables:
 // SELFDNS_LISTEN_ADDRESS & SELFDNS_SERVER_HOSTNAME.
 func NewDNSProvider() (*DNSProvider, error) {
+	var err error
 	values, err := env.Get(EnvListenAddress, EnvServerHostname)
 	if err != nil {
 		return nil, fmt.Errorf("selfdns: %w", err)
@@ -52,6 +55,19 @@ func NewDNSProvider() (*DNSProvider, error) {
 	config := NewDefaultConfig()
 	config.ListenAddress = values[EnvListenAddress]
 	config.ServerHostname = values[EnvServerHostname]
+
+	// If hostname is empty, get hostname and use it.
+	if config.ServerHostname == "" {
+		config.ServerHostname, err = os.Hostname()
+		if err != nil {
+			return nil, fmt.Errorf("selfdns: %w", err)
+		}
+	}
+
+	// Change format for IPv6 addresses
+	if net.ParseIP(config.ListenAddress).To4() == nil {
+		config.ListenAddress = "[" + config.ListenAddress + "]" // IPv6
+	}
 
 	return NewDNSProviderConfig(config)
 }
