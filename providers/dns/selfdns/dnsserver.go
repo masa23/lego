@@ -15,7 +15,17 @@ type record struct {
 	value    string
 }
 
-var rec record
+var rec []record
+
+func findRecord(fqdn string) (record, bool) {
+	fqdn = strings.ToLower(fqdn)
+	for _, r := range rec {
+		if r.fqdn == fqdn {
+			return r, true
+		}
+	}
+	return record{}, false
+}
 
 func request(w dns.ResponseWriter, r *dns.Msg) {
 	m := new(dns.Msg)
@@ -24,7 +34,8 @@ func request(w dns.ResponseWriter, r *dns.Msg) {
 
 	if r.Opcode == dns.OpcodeQuery {
 		for _, q := range r.Question {
-			if strings.ToLower(q.Name) != rec.fqdn {
+			rec, ok := findRecord(q.Name)
+			if !ok {
 				continue
 			}
 			switch q.Qtype {
@@ -53,15 +64,19 @@ func request(w dns.ResponseWriter, r *dns.Msg) {
 }
 
 func (d *DNSProvider) Run() error {
+	// DNSサーバの起動
+	// recが空の場合は初回起動
+	if len(rec) == 0 {
+		d.config.serverUDP = dns.Server{Addr: d.config.ListenAddress + ":53", Net: "udp"}
+		d.config.serverTCP = dns.Server{Addr: d.config.ListenAddress + ":53", Net: "tcp"}
+	}
+
 	// レコードの設定
-	rec = record{
+	rec = append(rec, record{
 		hostname: d.config.ServerHostname,
 		fqdn:     d.config.fqdn,
 		value:    d.config.value,
-	}
-	// DNSサーバの起動
-	d.config.serverUDP = dns.Server{Addr: d.config.ListenAddress + ":53", Net: "udp"}
-	d.config.serverTCP = dns.Server{Addr: d.config.ListenAddress + ":53", Net: "tcp"}
+	})
 
 	dns.HandleFunc(".", request)
 	go func() {
@@ -76,9 +91,20 @@ func (d *DNSProvider) Run() error {
 }
 
 func (d *DNSProvider) Stop() error {
-	err := d.config.serverUDP.Shutdown()
-	if err != nil {
-		return err
+	// recからレコードを削除
+	for i, r := range rec {
+		if r.fqdn == d.config.fqdn {
+			rec = append(rec[:i], rec[i+1:]...)
+		}
 	}
-	return d.config.serverTCP.Shutdown()
+
+	// recが空の場合はサーバを停止
+	if len(rec) == 0 {
+		err := d.config.serverUDP.Shutdown()
+		if err != nil {
+			return err
+		}
+		return d.config.serverTCP.Shutdown()
+	}
+	return nil
 }
